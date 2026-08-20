@@ -1,0 +1,17 @@
+{
+  "name": "tamcp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run start:app\" \"npm run start:backend\"",
+    "start:app": "cd tamcp-app && npm run dev",
+    "start:backend": "cd tamcp-backend && node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^10.0.4"
+  }
+}
