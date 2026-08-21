@@ -2,3 +2,9 @@ node_modules
 .env
 .git
 Dockerfile
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+test-server*.js
+migrate_to_jsonb.js
+README*

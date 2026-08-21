@@ -11,6 +11,9 @@ const { pool, SYNC_TABLES } = require('./db');
 
 const app = express();
 
+// Trust le premier proxy (Nginx/Docker) pour que le rate limiter voie la vraie IP client
+app.set('trust proxy', 1);
+
 // --- 1. SÉCURITÉ DE BASE ---
 // Helmet sécurise les en-têtes HTTP (empêche le Clickjacking, XSS basique, etc.)
 app.use(helmet());
@@ -139,7 +142,7 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
       // Générer un token temporaire valable 1 heure
       const resetToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
       
-      const resetLink = `http://localhost:5174/reset-password?token=${resetToken}`;
+      const resetLink = `${process.env.FRONTEND_URL || 'https://tamcp.org'}/reset-password?token=${resetToken}`;
       
       await transporter.sendMail({
         from: `"TamCP Admin" <${process.env.GMAIL_USER}>`,

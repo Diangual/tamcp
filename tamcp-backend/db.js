@@ -82,7 +82,7 @@ async function initDefaultUser() {
       role: 'admin',
       specialty: 'Administration',
       preferredLang: 'fr',
-      passwordHash: bcrypt.hashSync('admin', 10),
+      passwordHash: bcrypt.hashSync(process.env.DEFAULT_ADMIN_PASSWORD || 'admin', 10),
       createdAt: now,
       updatedAt: now,
       _syncStatus: 'synced'

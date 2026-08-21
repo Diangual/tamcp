@@ -37,23 +37,33 @@ services:
 
   backend:
     image: ${DOCKER_USERNAME}/tamcp-backend:latest
+    build: ./tamcp-backend
     container_name: tamcp_backend
     restart: unless-stopped
     depends_on:
       - db
     env_file:
       - .env.production
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-tamcp}
+      - DB_PASSWORD=${DB_PASSWORD:-tamcp_secure_password}
+      - DB_NAME=${DB_NAME:-tamcp}
+      - NODE_ENV=production
     networks:
       - tamcp-network
 
   frontend:
     image: ${DOCKER_USERNAME}/tamcp-app:latest
+    build: ./tamcp-app
     container_name: tamcp_frontend
     restart: unless-stopped
     depends_on:
       - backend
     ports:
       - "80:80"
+      - "443:443"
     networks:
       - tamcp-network
 
