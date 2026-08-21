@@ -57,45 +57,12 @@ async function initDB() {
       `);
     }
     
-    await initDefaultUser();
-    console.log('Schéma de base de données initialisé avec succès.');
+        console.log('Schéma de base de données initialisé avec succès.');
   } catch (error) {
     console.error('Erreur lors de l\'initialisation de la base de données:', error);
   }
 }
 
-// Initialize default admin user if users table is empty
-async function initDefaultUser() {
-  const bcrypt = require('bcryptjs');
-  
-  const res = await pool.query('SELECT COUNT(*) as count FROM users');
-  const userCount = parseInt(res.rows[0].count, 10);
-  
-  if (userCount === 0) {
-    const adminId = 'backend-admin-id-001';
-    const now = new Date().toISOString();
-    const adminData = {
-      id: adminId,
-      firstName: 'Admin',
-      lastName: 'Système',
-      email: 'admin@tamcp.com',
-      role: 'admin',
-      specialty: 'Administration',
-      preferredLang: 'fr',
-      passwordHash: bcrypt.hashSync(process.env.DEFAULT_ADMIN_PASSWORD || 'admin', 10),
-      createdAt: now,
-      updatedAt: now,
-      _syncStatus: 'synced'
-    };
-    
-    await pool.query(
-      'INSERT INTO users (id, data, deleted, updatedAt) VALUES ($1, $2, 0, $3)',
-      [adminId, JSON.stringify(adminData), now]
-    );
-      
-    console.log('Default admin user created: admin@tamcp.com / admin');
-  }
-}
 
 // Ensure tables exist on startup
 initDB();

@@ -36,7 +36,7 @@ services:
       - tamcp-network
 
   backend:
-    image: ${DOCKER_USERNAME}/tamcp-backend:latest
+    image: ${DOCKER_USERNAME:-diangal}/tamcp-backend:latest
     build: ./tamcp-backend
     container_name: tamcp_backend
     restart: unless-stopped
@@ -55,7 +55,7 @@ services:
       - tamcp-network
 
   frontend:
-    image: ${DOCKER_USERNAME}/tamcp-app:latest
+    image: ${DOCKER_USERNAME:-diangal}/tamcp-app:latest
     build: ./tamcp-app
     container_name: tamcp_frontend
     restart: unless-stopped
@@ -64,10 +64,15 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
     networks:
       - tamcp-network
 
 volumes:
+  caddy_data:
+  caddy_config:
   postgres_data:
 
 networks:
