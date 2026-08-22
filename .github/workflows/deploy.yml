@@ -69,8 +69,8 @@ jobs:
             PORT=5000
             NODE_ENV=production
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=120d
             FRONTEND_URL=https://tamcp.org
-            DEFAULT_ADMIN_PASSWORD=${{ secrets.DEFAULT_ADMIN_PASSWORD }}
             
             # Email SMTP
             GMAIL_USER=${{ secrets.GMAIL_USER }}
