@@ -168,8 +168,9 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
+    // AJOUT DE LOWER() POUR IGNORER LA CASSE DANS LA BASE DE DONNÉES
     const result = await pool.query(
-      `SELECT data FROM users WHERE deleted = 0 AND data->>'email' = $1`,
+      `SELECT data FROM users WHERE deleted = 0 AND LOWER(data->>'email') = $1`,
       [normalizedEmail]
     );
 
@@ -180,13 +181,28 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const userRow = result.rows[0];
     const user = typeof userRow.data === 'string' ? JSON.parse(userRow.data) : userRow.data;
 
-    const isMatch = bcrypt.compareSync(password, user.passwordHash);
+    // GESTION DES MOTS DE PASSE (BCRYPT DU BACKEND OU CLAIR DU OFFLINE)
+    const storedPassword = user.passwordHash || user.password;
+    
+    if (!storedPassword) {
+      return res.status(401).json({ error: 'Identifiants invalides' });
+    }
+
+    let isMatch = false;
+    if (storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$')) {
+      isMatch = bcrypt.compareSync(password, storedPassword);
+    } else {
+      isMatch = (password === storedPassword);
+    }
+
     if (!isMatch) {
       return res.status(401).json({ error: 'Identifiants invalides' });
     }
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    const { passwordHash, ...userWithoutHash } = user;
+    
+    // Nettoyer tous les mots de passe avant de renvoyer l'utilisateur au frontend
+    const { passwordHash, password: clearPassword, ...userWithoutHash } = user;
     
     res.json({ token, user: userWithoutHash });
   } catch (err) {
@@ -206,9 +222,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
   const normalizedEmail = email.toLowerCase().trim();
 
   try {
-    // Vérifier si l'email existe déjà
+    // Vérifier si l'email existe déjà avec LOWER()
     const existing = await pool.query(
-      `SELECT id FROM users WHERE deleted = 0 AND data->>'email' = $1`,
+      `SELECT id FROM users WHERE deleted = 0 AND LOWER(data->>'email') = $1`,
       [normalizedEmail]
     );
 
@@ -257,7 +273,8 @@ app.post('/api/auth/forgot-password', authLimiter, async (req, res) => {
   const normalizedEmail = email ? email.toLowerCase().trim() : '';
   
   try {
-    const result = await pool.query(`SELECT data FROM users WHERE deleted = 0 AND data->>'email' = $1`, [normalizedEmail]);
+    // LOWER() appliqué ici aussi
+    const result = await pool.query(`SELECT data FROM users WHERE deleted = 0 AND LOWER(data->>'email') = $1`, [normalizedEmail]);
     if (result.rows.length > 0) {
       const user = typeof result.rows[0].data === 'string' ? JSON.parse(result.rows[0].data) : result.rows[0].data;
       
@@ -290,7 +307,10 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const result = await pool.query(`SELECT id, data FROM users WHERE deleted = 0 AND data->>'email' = $1`, [decoded.email]);
+    const decodedEmail = decoded.email.toLowerCase().trim();
+    
+    // LOWER() appliqué ici aussi
+    const result = await pool.query(`SELECT id, data FROM users WHERE deleted = 0 AND LOWER(data->>'email') = $1`, [decodedEmail]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Utilisateur introuvable" });
@@ -301,6 +321,9 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
     
     const salt = bcrypt.genSaltSync(10);
     user.passwordHash = bcrypt.hashSync(newPassword, salt);
+    // Supprimer tout mot de passe en texte clair qui aurait pu être enregistré hors-ligne
+    if (user.password) delete user.password;
+    
     user.updatedAt = new Date().toISOString();
     
     await pool.query(

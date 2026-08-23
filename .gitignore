@@ -8,6 +8,7 @@ tamcp-backend/node_modules/
 .env.*
 !.env.example
 !.env.template
+.env.production
 
 # Logs
 logs
